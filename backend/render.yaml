@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: edt-backend
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        value: votre_secret_jwt_tres_securise
+
+      - key: SESSION_SECRET
+        value: votre_secret_session
+
+      - key: CAS_SERVICE_URL
+        value: https://edt-backend.onrender.com/api/auth/login-cas
+
+      - key: CAS_URL
+        value: https://auth.univ-fcomte.fr/
+
+      - key: DB_HOST
+        value: localhost
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: emargement
+      - key: DB_USER
+        value: postgres
+      - key: DB_PASSWORD
+        value: 1234
+
+      # Cette variable sera automatiquement fournie par Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: edt-db
+          property: connectionString
+
+databases:
+  - name: edt-db
+    plan: free
+    region: frankfurt
+    databaseName: emargement
+    user: postgres
