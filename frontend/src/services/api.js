@@ -2,8 +2,8 @@ import store from '@/store';
 import axios from 'axios';
 
 const api = axios.create({
- baseURL: 'http://localhost:3000',
-})
+    baseURL: process.env.VUE_APP_API_URL
+});
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
