@@ -3,7 +3,7 @@ require('dotenv').config(); // charge les variables d'environnement en premier
 const app = require('./app');
 const sequelize = require('./config/database');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Connexion à PostgreSQL via Sequelize
 sequelize.authenticate()
