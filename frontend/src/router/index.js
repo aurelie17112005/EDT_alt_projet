@@ -85,25 +85,28 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = store.getters['auth/isAuthenticated']
   const userRole = store.getters['auth/userRole']
 
-  // Vérification des routes protégées
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isAuthenticated) {
-      next({
-        name: 'Login',
-        query: { redirect: to.fullPath }
-      })
-    } else if (to.meta.role && userRole !== to.meta.role) {
-      // Redirection selon le rôle
-      const redirectPath = userRole === 'teacher' 
-        ? '/teacher/session' 
-        : '/student/scan'
-      next(redirectPath)
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+    } 
+    // ✅ PROTECTION ajoutée ici :
+    else if (to.meta.role) {
+      if (!userRole) {
+        console.warn('⚠️ userRole non encore chargé, navigation suspendue')
+        return // ou `next(false)` pour bloquer
+      }
+      if (userRole !== to.meta.role) {
+        const redirectPath = userRole === 'teacher' 
+          ? '/teacher/session' 
+          : '/student/scan'
+        next(redirectPath)
+      } else {
+        next()
+      }
     } else {
       next()
     }
-  } 
-  // Empêcher l'accès aux pages login/register si déjà connecté
-  else if (to.matched.some(record => record.meta.guest)) {
+  } else if (to.matched.some(record => record.meta.guest)) {
     if (isAuthenticated) {
       next('/')
     } else {
@@ -113,5 +116,6 @@ router.beforeEach((to, from, next) => {
     next()
   }
 })
+
 
 export default router

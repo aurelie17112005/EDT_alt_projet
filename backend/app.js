@@ -3,13 +3,14 @@ const session = require('express-session');
 const passport = require('./middlewares/passport');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const pdfRoutes = require('./routes/pdfRoutes');
 
 dotenv.config();
 const app = express();
 
 // CORS
 const corsOptions = {
-  origin: 'http://localhost:8081',
+   origin: [ 'http://localhost:8081'],
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -31,6 +32,9 @@ const authRoutes = require('./routes/authRoutes');
 const qrRoutes = require('./routes/qrRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
+app.get('/', (req, res) => {
+  res.send('Backend opérationnel ✔️');
+});
 
 app.use('/auth', authRoutes);
 
@@ -42,5 +46,7 @@ app.use('/api/sessions', sessionRoutes);
 
 // **NOUVEAU** : présences sous /api/attendances
 app.use('/api/attendances', attendanceRoutes);
+
+app.use('/api/pdf', pdfRoutes);
 
 module.exports = app;
