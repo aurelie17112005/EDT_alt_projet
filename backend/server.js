@@ -15,9 +15,9 @@ sequelize.authenticate()
   })
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`🚀 Serveur en écoute sur http://localhost:${PORT}`);
+      console.log(`🚀 Serveur en écoute sur ${PORT}`);
     });
   })
   .catch(err => {
-    console.error('❌ Échec de la connexion PostgreSQL :', err.message);
-  });
+      console.log(`🚀 Serveur en écoute sur http://localhost:${PORT}`);
+});

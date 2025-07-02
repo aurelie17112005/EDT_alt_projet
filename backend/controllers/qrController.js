@@ -6,7 +6,7 @@ const Session = require('../models/Session');        // import direct
 const Attendance = require('../models/Attendance');  // import direct
 
 const SECRET_KEY = process.env.SECRET_KEY || 'default_secret';
-const QR_CODE_EXPIRATION = 5 * 60; // 5 minutes en secondes
+const QR_CODE_EXPIRATION = 10 * 60; // 5 minutes en secondes
 
 // Génération du QR Code
 exports.generateQRCode = async (req, res) => {
@@ -34,6 +34,8 @@ exports.generateQRCode = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la génération du QR code' });
   }
 };
+
+
 
 // Scan du QR Code et enregistrement de la présence
 exports.scanQRCode = async (req, res) => {
