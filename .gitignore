@@ -1,2 +1,23 @@
 /backend/node_modules/
 /frontend/node_modules/
+
+Hostname
+dpg-d1fafgqli9vc739qloqg-a
+
+Port
+5432
+
+Database
+emargement_g5s9
+
+Username
+user1
+
+PASSWORD
+vIpFW5nOBaPGl3ej4rRDurnPxkI634CE
+
+Internal Database URL
+postgresql://user1:vIpFW5nOBaPGl3ej4rRDurnPxkI634CE@dpg-d1fafgqli9vc739qloqg-a/emargement_g5s9
+
+External databse url
+postgresql://user1:vIpFW5nOBaPGl3ej4rRDurnPxkI634CE@dpg-d1fafgqli9vc739qloqg-a.frankfurt-postgres.render.com/emargement_g5s9
