@@ -1,67 +1,108 @@
 const PDFDocument = require('pdfkit');
-const Session = require('../models/Session');
-const Attendance = require('../models/Attendance');
-const User = require('../models/User');
+const { Session, Attendance, User, Sequelize } = require('../models');
+const Op = Sequelize.Op;
 
-exports.generatePdf = async (req, res) => {
+exports.generateDailyPdf = async (req, res) => {
   try {
-    const sessionId = req.params.sessionId;
-
-    const session = await Session.findByPk(sessionId, {
-      include: [{ model: User, as: 'teacher' }]
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Séance non trouvée' });
+    const { date: dateParam, groupId } = req.query;
+    if (!dateParam || !groupId) {
+      return res.status(400).json({ message: 'Paramètres "date" et "groupId" requis' });
     }
 
-    const attendances = await Attendance.findAll({
-      where: { SessionId: sessionId }, // Vérifie que la colonne est bien `SessionId` dans ton modèle
-      include: [{ model: User, as: 'student' }]
+    // calcul des bornes de la journée
+    const date = new Date(dateParam);
+    const startOfDay = new Date(date.setHours(0,0,0,0));
+    const endOfDay   = new Date(date.setHours(23,59,59,999));
+
+    // charge le groupe
+    const group = await Group.findByPk(groupId);
+    if (!group) return res.status(404).json({ message: 'Groupe non trouvé' });
+
+    // récupère les séances de ce groupe ce jour-là
+    const sessions = await Session.findAll({
+      where: {
+        groupId,
+        startTime: { [Op.between]: [startOfDay, endOfDay] }
+      },
+      include: [{ model: User, as: 'teacher', attributes: ['firstname','lastname'] }],
+      order: [['startTime','ASC']]
     });
 
-    // Création du PDF
-    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    // liste des étudiants du groupe
+    const students = await User.findAll({
+      where: { groupId, role: 'student' },
+      order: [['lastname','ASC'], ['firstname','ASC']]
+    });
 
-    // Headers HTTP
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=emargement_session_${sessionId}.pdf`);
+    // récupère toutes les présences enregistrées pour ces séances
+    const sessionIds = sessions.map(s => s.id);
+    const attendances = await Attendance.findAll({
+      where: { sessionId: sessionIds.length ? sessionIds : [0] }
+    });
+
+    // map de présence par ldapId
+    const presentMap = {};
+    attendances.forEach(a => { presentMap[a.studentId] = true; });
+
+    // --- génération PDF ---
+    const doc = new PDFDocument({ size:'A4', margin:40 });
+    const now = new Date();
+    res.setHeader('Content-Type','application/pdf');
+    res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=emargement_${group.name}_${dateParam}.pdf`
+    );
     doc.pipe(res);
 
     // Titre
-    doc.fontSize(18).text(`Fiche d’émargement`, { align: 'center', underline: true });
+    doc.fontSize(18)
+        .text(`Fiche d'émargement`, { align:'center', underline:true });
     doc.moveDown();
 
-    // Infos session
-    doc.fontSize(12);
-    doc.text(`Sujet : ${session.subject}`);
-    doc.text(`Salle : ${session.room}`);
-    doc.text(`Début : ${new Date(session.startTime).toLocaleString()}`);
-    doc.text(`Fin : ${new Date(session.endTime).toLocaleString()}`);
-    doc.text(`Enseignant : ${session.teacher.firstName} ${session.teacher.lastName}`);
+    // Sous-titre
+    doc.fontSize(12)
+        .text(`Année universitaire 2024-2025 - Fiche d'émargement du ${dateParam} - Groupe : ${group.name}`);
     doc.moveDown();
 
-    // Entête du tableau
-    doc.font('Helvetica-Bold').text('N°', 40, doc.y, { continued: true });
-    doc.text('Nom Prénom', 80, doc.y, { continued: true });
-    doc.text('Email', 250, doc.y, { continued: true });
-    doc.text('Signature', 420, doc.y);
+    // Section étudiants
+    doc.font('Helvetica-Bold').text('Etudiants', { underline:true });
     doc.moveDown(0.5);
     doc.font('Helvetica');
-
-    // Liste des étudiants
-    attendances.forEach((att, index) => {
-      const student = att.student;
-      doc.text(`${index + 1}`, 40, doc.y, { continued: true });
-      doc.text(`${student.lastName} ${student.firstName}`, 80, doc.y, { continued: true });
-      doc.text(`${student.email}`, 250, doc.y, { continued: true });
-      doc.text('................................', 420, doc.y);
-      doc.moveDown(0.5);
+    students.forEach((stu, i) => {
+      const statut = presentMap[stu.ldapId] ? 'validé' : 'absent';
+      doc.text(`${i+1}. ${stu.lastname} ${stu.firstname} — ${statut}`);
     });
+    doc.moveDown();
+
+    // Séparateur
+    doc.text('--- --- ---', { align:'center' });
+    doc.moveDown();
+
+    // Détail des séances
+    sessions.forEach(sess => {
+      const startT = sess.startTime.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+      const endT   = sess.endTime  .toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+      doc.text(`${sess.subject}   ${startT} - ${endT}`);
+    });
+    doc.moveDown();
+
+    // Pied de page & signature
+    doc.text(
+        `Page ${doc.page.number} / ${doc.pageCount} - Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`,
+        { align:'right' }
+    ).moveDown();
+
+    const teacher = sessions[0]?.teacher;
+    if (teacher) {
+      doc.text(
+          `Signature numérique : ${teacher.firstname} ${teacher.lastname}`,
+          { align:'right' }
+      );
+    }
 
     doc.end();
   } catch (err) {
-    console.error('Erreur génération PDF :', err);
+    console.error('Erreur génération fiche journalière :', err);
     res.status(500).json({ message: 'Erreur serveur lors de la génération du PDF' });
   }
 };

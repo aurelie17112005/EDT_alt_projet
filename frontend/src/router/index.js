@@ -23,7 +23,16 @@ const routes = [
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { guest: true }
   },
-  // Routes Enseignant
+
+  // ADMIN
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/admin/AdminView.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+
+  // TEACHER
   {
     path: '/teacher/session',
     name: 'TeacherSession',
@@ -36,7 +45,8 @@ const routes = [
     component: () => import('@/views/teacher/AttendanceView.vue'),
     meta: { requiresAuth: true, role: 'teacher' }
   },
-  // Routes Étudiant
+
+  // STUDENT
   {
     path: '/student/scan',
     name: 'StudentScan',
@@ -49,7 +59,8 @@ const routes = [
     component: () => import('@/views/student/PeerValidationDialog.vue'),
     meta: { requiresAuth: true, role: 'student' }
   },
-  // Routes communes
+
+  // COMMON
   {
     path: '/profile',
     name: 'Profile',
@@ -61,61 +72,82 @@ const routes = [
     name: 'About',
     component: () => import('@/views/AboutView.vue')
   },
-  // Redirection pour les routes inconnues
-  {
-    path: '*',
-    redirect: '/'
-  }
+
+  { path: '*', redirect: '/' }
 ]
 
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes,
-  scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    } else {
-      return { x: 0, y: 0 }
-    }
-  }
+  scrollBehavior: () => ({ x: 0, y: 0 })
 })
 
-router.beforeEach((to, from, next) => {
+/** Util: route par rôle */
+function dashboardFor(role) {
+  if (role === 'admin') return '/admin'
+  if (role === 'teacher') return '/teacher/session'
+  return '/student/scan'
+}
+
+let userFetchedOnce = false
+
+router.beforeEach(async (to, from, next) => {
   const isAuthenticated = store.getters['auth/isAuthenticated']
-  const userRole = store.getters['auth/userRole']
+  let userRole = store.getters['auth/userRole']
 
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!isAuthenticated) {
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-    } 
-    // ✅ PROTECTION ajoutée ici :
-    else if (to.meta.role) {
-      if (!userRole) {
-        console.warn('⚠️ userRole non encore chargé, navigation suspendue')
-        return // ou `next(false)` pour bloquer
-      }
-      if (userRole !== to.meta.role) {
-        const redirectPath = userRole === 'teacher' 
-          ? '/teacher/session' 
-          : '/student/scan'
-        next(redirectPath)
-      } else {
-        next()
-      }
-    } else {
-      next()
-    }
-  } else if (to.matched.some(record => record.meta.guest)) {
-    if (isAuthenticated) {
-      next('/')
-    } else {
-      next()
-    }
-  } else {
-    next()
+  // Toujours essayer de charger l'utilisateur si on est auth mais sans rôle
+  if (isAuthenticated && !userRole && !userFetchedOnce) {
+    userFetchedOnce = true
+    await store.dispatch('auth/fetchUser').catch(() => {})
+    userRole = store.getters['auth/userRole']
   }
+
+  // Routes protégées
+  if (to.matched.some(r => r.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      return next({ name: 'Login', query: { redirect: to.fullPath } })
+    }
+
+    // Si on ouvre "Home", rediriger vers le bon tableau de bord
+    if (to.name === 'Home') {
+      return next(dashboardFor(userRole))
+    }
+
+    // Rôle requis mais différent → renvoyer vers son dashboard
+    if (to.meta.role && to.meta.role !== userRole) {
+      return next(dashboardFor(userRole))
+    }
+
+    return next()
+  }
+
+  // Routes invité : si déjà connecté, envoyer au dashboard adapté
+  if (to.matched.some(r => r.meta.guest) && isAuthenticated) {
+    return next(dashboardFor(userRole))
+  }
+
+  return next()
 })
 
+/** Éviter les erreurs bruyantes de redirections "Redirected when going from..." */
+Vue.config.errorHandler = (err) => {
+  if (err && err.message && err.message.startsWith('Redirected when going from')) {
+    return
+  }
+  console.error(err)
+}
+
+// Éviter NavigationDuplicated non fatales
+const origPush = VueRouter.prototype.push
+VueRouter.prototype.push = function push(loc, onResolve, onReject) {
+  if (onResolve || onReject) return origPush.call(this, loc, onResolve, onReject)
+  return origPush.call(this, loc).catch(err => err)
+}
+const origReplace = VueRouter.prototype.replace
+VueRouter.prototype.replace = function replace(loc, onResolve, onReject) {
+  if (onResolve || onReject) return origReplace.call(this, loc, onResolve, onReject)
+  return origReplace.call(this, loc).catch(err => err)
+}
 
 export default router

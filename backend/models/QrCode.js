@@ -1,20 +1,42 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Session = require('./Session');
+const { Model, DataTypes } = require('sequelize');
 
-const QRCode = sequelize.define('QRCode', {
-  code: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  expiresAt: {
-    type: DataTypes.DATE,
-    allowNull: false,
-  },
-}, {
-  timestamps: true,
-});
+class QrCode extends Model {
+  static associate(models) {
+    this.belongsTo(models.Session, { foreignKey: 'sessionId', as: 'session' });
+  }
+}
 
-QRCode.belongsTo(Session, { foreignKey: { allowNull: false } });
+module.exports = (sequelize) => {
+  QrCode.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    used: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
+    expiresAt: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    sessionId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
+  }, {
+    sequelize,
+    modelName: 'QrCode',
+    tableName: 'qrcodes',
+    freezeTableName: true,
+    timestamps: true
+  });
 
-module.exports = QRCode;
+  return QrCode;
+};

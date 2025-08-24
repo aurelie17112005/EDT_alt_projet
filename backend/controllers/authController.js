@@ -2,7 +2,7 @@
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { User } = require('../models');
 const config = require('../config/auth');
 const { Op } = require('sequelize');
 
@@ -32,7 +32,7 @@ exports.register = async (req, res) => {
       role: role || 'student',
     });
 
-    const token = jwt.sign({ id: newUser.id, role: newUser.role }, config.jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ ldapId: newUser.ldapId, role: newUser.role }, config.jwtSecret, { expiresIn: '1h' });
 
     res.status(201).json({
       message: 'Inscription réussie',
@@ -89,7 +89,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { ldapId: user.ldapId, role: user.role },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn || '1h' }
     );
@@ -136,15 +136,15 @@ exports.handleCasLogin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { ldapId: user.ldapId, role: user.role },
       config.jwtSecret,
       { expiresIn: config.jwtExpiresIn }
     );
 
-    const redirectUrl = req.query.redirect 
-      ? `http://localhost:8081${req.query.redirect}?cas_token=${token}` 
+    const redirectUrl = req.query.redirect
+      ? `http://localhost:8081${req.query.redirect}?cas_token=${token}`
       : `http://localhost:8081/?cas_token=${token}`;
-    
+
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('CAS login error:', error);
@@ -159,9 +159,9 @@ exports.getCasUser = async (req, res) => {
 
     const decoded = jwt.verify(token, config.jwtSecret);
     const user = await User.findByPk(decoded.id);
-    
+
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });

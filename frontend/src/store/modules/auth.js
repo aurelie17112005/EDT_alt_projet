@@ -50,6 +50,19 @@ export default {
     },
     logout({ commit }) {
       commit('CLEAR_AUTH')
+    },
+    async fetchUser({ commit }) {
+      try {
+        const res = await api.get('/auth/me')
+        commit('SET_USER', {
+          user: res.data,
+          token: localStorage.getItem('token') // optionnel
+        })
+      } catch (err) {
+        commit('CLEAR_AUTH')
+        console.warn('❌ fetchUser failed:', err)
+      }
     }
+
   }
 }

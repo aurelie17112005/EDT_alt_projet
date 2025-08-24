@@ -1,22 +1,66 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth');
 
-module.exports = (req, res, next) => {
-  // 1. Vérifier le header Authorization
+// Middleware d'authentification par JWT
+function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authentification requise' });
+    return res.status(401).json({
+      error: 'Authentification requise',
+      details: 'Token Bearer manquant dans les headers'
+    });
   }
 
-  // 2. Extraire le token
   const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({
+      error: 'Authentification requise',
+      details: 'Token non fourni'
+    });
+  }
 
   try {
-    // 3. Vérifier le token
     const decoded = jwt.verify(token, config.jwtSecret);
-    req.user = decoded;
+
+    if (!decoded.ldapId) {
+      return res.status(401).json({
+        error: 'Token invalide',
+        details: 'Le token ne contient pas de ldapId'
+      });
+    }
+
+    req.user = {
+      ldapId: decoded.ldapId,
+      role: decoded.role || 'student'
+    };
+
+    console.log(`Utilisateur authentifié: ${req.user.ldapId} (${req.user.role})`);
+
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Token invalide' });
+    console.error('Erreur de vérification du token:', error.message);
+    const errorMessage = error.name === 'TokenExpiredError'
+        ? 'Token expiré'
+        : 'Token invalide';
+
+    return res.status(401).json({ error: errorMessage });
   }
+}
+
+// Middleware pour restreindre aux profs
+function requireProf(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Non authentifié' });
+  }
+
+  if (req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Accès réservé aux professeurs' });
+  }
+
+  next();
+}
+
+module.exports = {
+  requireAuth,
+  requireProf
 };

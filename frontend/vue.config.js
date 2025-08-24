@@ -1,17 +1,17 @@
+// vue.config.js
 const { defineConfig } = require('@vue/cli-service')
+
+const isProd = process.env.NODE_ENV === 'production'
+
 module.exports = defineConfig({
-  transpileDependencies: [
-    'vuetify'
-  ]
-})
-// vue.config.js (Vue CLI)
-module.exports = {
+  transpileDependencies: ['vuetify'],
+  publicPath: '/', // Vercel serves at root
   devServer: {
-    host: '0.0.0.0', // important
+    host: '0.0.0.0',
     port: 8081,
     allowedHosts: 'all',
-    client: {
-      webSocketURL: 'ws://localhost:8081/ws',
-    }
+    ...(isProd ? {} : {
+      client: { webSocketURL: 'ws://localhost:8081/ws' }
+    })
   }
-};
+})

@@ -1,22 +1,55 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Session = require('./Session');
-const User = require('./User');
+// models/Attendance.js
+const { Model, DataTypes } = require('sequelize');
 
-const Attendance = sequelize.define('Attendance', {
-  timestamp: {
-    type: DataTypes.DATE,
-    allowNull: false,
-  },
-  validatedByPeer: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
-}, {
-  timestamps: true,
-});
+class Attendance extends Model {
+  static associate(models) {
+    // Association avec la séance
+    this.belongsTo(models.Session, { foreignKey: 'sessionId', as: 'session' });
+    // Association vers l'étudiant
+    this.belongsTo(models.User, { foreignKey: 'studentId', targetKey: 'ldapId', as: 'student' });
+    // Association vers le validateur (pair)
+    this.belongsTo(models.User, { foreignKey: 'validatedBy', targetKey: 'ldapId', as: 'validator' });
+  }
+}
 
-Attendance.belongsTo(Session, { foreignKey: { allowNull: false } });
-Attendance.belongsTo(User, { as: 'student', foreignKey: { allowNull: false } });
+module.exports = (sequelize) => {
+  Attendance.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    sessionId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    studentId: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    timestamp: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    mode: {
+      type: DataTypes.STRING,
+      defaultValue: 'QR'
+    },
+    validatedBy: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    validatedByPeer: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    }
+  }, {
+    sequelize,
+    modelName: 'Attendance',
+    tableName: 'attendances',
+    freezeTableName: true,
+    timestamps: true
+  });
 
-module.exports = Attendance;
+  return Attendance;
+};

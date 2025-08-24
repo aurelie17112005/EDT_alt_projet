@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const qrController = require('../controllers/qrController');
+const { requireAuth } = require('../middlewares/auth');
 
-// Génération du QR Code
-router.post('/generate', qrController.generateQRCode);
-
-// Scan du QR Code
+// Protéger la génération mais pas le scan (fait par les étudiants)
+router.post('/generate', requireAuth, qrController.generateQRCode);
 router.post('/scan', qrController.scanQRCode);
 
 module.exports = router;

@@ -39,54 +39,53 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'LoginView',
   data() {
     return {
-      username: '',   // changée de email en username
+      username: '',
       password: '',
       loading: false,
-      error: null,
-    };
+      error: null
+    }
+  },
+  computed: {
+    ...mapGetters('auth', ['userRole'])
   },
   methods: {
-   async loginUser() {
-  this.loading = true;
-  this.error = null;
+    async loginUser() {
+      this.loading = true
+      this.error = null
+      try {
+        // Envoie au store : il doit stocker user + token
+        const payload = { ldapId: this.username, password: this.password }
+        const res = await this.$store.dispatch('auth/login', payload)
 
-  try {
-    const response = await axios.post('http://localhost:3000/auth/login', {
-      ldapId: this.username,
-      password: this.password,
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
+        // Le rôle peut venir du store (recommandé) ou de la réponse
+        const role = this.$store.getters['auth/userRole'] || res?.user?.role
+
+        // Redirection explicite par rôle (on ignore ?redirect=... pour éviter les mauvaises surprises)
+        const target =
+            role === 'admin' ? '/admin'
+                : role === 'teacher' ? '/teacher/session'
+                    : '/student/scan'
+
+        // replace pour ne pas revenir sur /login au "back"
+        this.$router.replace(target)
+      } catch (error) {
+        this.error = error?.error || error?.message || 'Erreur lors de la connexion'
+        console.error('Login error:', error)
+      } finally {
+        this.loading = false
       }
-    });
-
-    if (response.data.token) {
-  this.$store.commit('auth/SET_USER', {
-    user: response.data.user,
-    token: response.data.token
-  });
-
-  const redirect = this.$route.query.redirect || { name: 'Home' };
-  this.$router.push(redirect);
-}
-  } catch (error) {
-    this.error = error.response?.data?.error || 
-                error.message || 
-                'Erreur lors de la connexion';
-    console.error('Login error:', error);
-  } finally {
-    this.loading = false;
-  }
-},
-    loginWithCAS() {
-      window.location.href = 'http://localhost:3000/auth/cas';
     },
-  },
-};
+
+    loginWithCAS() {
+      // Ajustez si vous utilisez un domaine public ou ngrok
+      window.location.href = `${process.env.VUE_APP_API_URL || 'http://localhost:3000'}/auth/cas`
+    }
+  }
+}
 </script>

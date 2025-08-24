@@ -1,38 +1,58 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { Model, DataTypes } = require('sequelize');
 
-const User = sequelize.define('User', {
-  ldapId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      isEmail: true,
+class User extends Model {
+  static associate(models) {
+    this.hasMany(models.Session, { foreignKey: 'teacherId', as: 'sessions' });
+    this.hasMany(models.Attendance, { foreignKey: 'studentId', sourceKey: 'ldapId', as: 'attendances' });
+    this.hasMany(models.Attendance, { foreignKey: 'validatedBy', sourceKey: 'ldapId', as: 'validatedAttendances' });
+    this.belongsTo(models.Group, { foreignKey: 'groupId', as: 'group' });
+  }
+}
+
+module.exports = (sequelize) => {
+  User.init({
+    ldapId: {
+      type: DataTypes.STRING,
+      primaryKey: true,
     },
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  role: {
-    type: DataTypes.ENUM('student', 'teacher', 'admin'), // ✅ rôles définis correctement
-    defaultValue: 'student',
-  },
-  firstName: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  lastName: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-}, {
-  timestamps: true,
-});
+    firstname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lastname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    groupId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'groups',
+        key: 'id'
+      }
+    },
 
-module.exports = User;
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'student'
+    }
+  }, {
+    sequelize,
+    modelName: 'User',
+    tableName: 'users',
+    freezeTableName: true,
+    timestamps: true
+  });
+
+  return User;
+};

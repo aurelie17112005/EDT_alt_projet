@@ -1,22 +1,23 @@
 <template>
-  <div class="qr-generator">
-    <v-btn @click="generateQr" color="primary" :loading="loading">
-      Générer QR Code
+  <div class="text-center">
+    <v-btn color="primary" @click="generateQrCode" :loading="loading" :disabled="loading">
+      <v-icon left>mdi-qrcode</v-icon>
+      Générer le QR Code
     </v-btn>
 
-    <div v-if="qrUrl" class="mt-4">
-      <img :src="qrUrl" alt="QR Code" style="max-width: 200px;" />
-      <p class="mt-2">Valide jusqu'à: {{ expiryTime }}</p>
+    <div class="mt-4">
+      <p class="text-red" v-if="!qr">Aucun QR généré</p>
+      <div v-else>
+        <p class="text-green">QR généré :</p>
+        <img :src="qr" alt="QR Code" style="max-width: 200px; margin-top: 10px;" />
+        <div class="caption grey--text">Valable 5 minutes</div>
+      </div>
     </div>
-
-    <v-alert v-if="error" type="error" class="mt-3">
-      {{ error }}
-    </v-alert>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import api from '@/services/api';
 
 export default {
   name: 'QrCodeGenerator',
@@ -28,39 +29,38 @@ export default {
   },
   data() {
     return {
-      qrUrl: '',
-      expiryTime: '',
-      loading: false,
-      error: null
-    }
+      qr: '',
+      loading: false
+    };
   },
   methods: {
-    async generateQr() {
-      this.loading = true
-      this.error = null
-
+    async generateQrCode() {
+      this.loading = true;
       try {
-        const token = localStorage.getItem('token')
-
-        const res = await axios.post(
-          'http://localhost:3000/api/qrcode/generate',
-          { sessionId: this.sessionId },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        )
-
-        this.qrUrl = res.data.qrCodeUrl
-        this.expiryTime = new Date(Date.now() + 5 * 60 * 1000).toLocaleString() // 5 min
-      } catch (err) {
-        console.error('Erreur lors de la génération du QR Code:', err)
-        this.error = err.response?.data?.message || 'Erreur inconnue'
+        const token = localStorage.getItem('token');
+        const response = await api.post(`/api/qrcode/generate`, {sessionId: this.sessionId}, {
+          headers: {Authorization: `Bearer ${token}`}
+        });
+        console.log('QR reçu du backend :', response.data.qrCode);
+        this.qr = response.data.qrCodeUrl;
+        this.$emit('qr-generated', this.qr);
+      } catch (error) {
+        console.error('Erreur génération QR:', error);
+        this.$emit('error', error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     }
   }
-}
+};
 </script>
+
+<style scoped>
+img {
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  padding: 5px;
+  background-color: #fff;
+}
+</style>

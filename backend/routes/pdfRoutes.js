@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const {requireAuth} = require('../middlewares/auth');
 const pdfController = require('../controllers/pdfController');
-const auth = require('../middlewares/auth');
 
-router.get('/generate/:sessionId', auth, pdfController.generatePdf);
+// ✅ Nouvelle route : Génération de la fiche par groupe + date
+router.get('/generate-daily/:date/:groupId', requireAuth, pdfController.generateDailyPdf);
 
 module.exports = router;
