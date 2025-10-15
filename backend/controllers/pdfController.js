@@ -1,5 +1,5 @@
 const PDFDocument = require('pdfkit');
-const { Session, Attendance, User, Sequelize } = require('../models');
+const { Session, Attendance, User, Group, Sequelize } = require('../models');
 const Op = Sequelize.Op;
 
 exports.generateDailyPdf = async (req, res) => {
