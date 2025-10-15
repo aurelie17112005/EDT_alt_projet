@@ -1,10 +1,10 @@
 const PDFDocument = require('pdfkit');
-const { Session, Attendance, User, Sequelize } = require('../models');
+const { Session, Attendance, User, Group, Sequelize } = require('../models');
 const Op = Sequelize.Op;
 
 exports.generateDailyPdf = async (req, res) => {
   try {
-    const { date: dateParam, groupId } = req.query;
+    const { date: dateParam, groupId } = req.params;
     if (!dateParam || !groupId) {
       return res.status(400).json({ message: 'Paramètres "date" et "groupId" requis' });
     }
