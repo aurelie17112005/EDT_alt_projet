@@ -2,11 +2,21 @@
 
 Application de gestion d'emploi du temps et d'émargement avec QR Code.
 
+## ⚡ Déploiement Rapide (30 minutes)
+
+**Vous voulez déployer rapidement?** 
+👉 Suivez le **[Guide Rapide de Déploiement](./QUICKSTART.md)** (30 minutes)
+
+Pour plus de détails, consultez le **[Guide Complet](./DEPLOYMENT.md)**.
+
 ## 🚀 Déploiement en Ligne
 
-Pour déployer ce projet en ligne (Render + Vercel ou GitHub Pages), consultez le guide complet:
+Pour déployer ce projet en ligne (Render + Vercel ou GitHub Pages), consultez:
 
-👉 **[Guide de Déploiement](./DEPLOYMENT.md)**
+- **[Guide Rapide - 30 min](./QUICKSTART.md)** ⚡ - Démarrage ultra-rapide
+- **[Guide Complet](./DEPLOYMENT.md)** 📚 - Instructions détaillées
+- **[Checklist](./DEPLOYMENT_CHECKLIST.md)** ✅ - Étape par étape
+- **[Architecture](./ARCHITECTURE.md)** 🏗️ - Comprendre le système
 
 ## 📦 Installation Locale
 
