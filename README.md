@@ -66,6 +66,30 @@ npm run build
 
 ## 🔗 Liens Utiles
 
-- [Guide de Déploiement](./DEPLOYMENT.md) - Instructions complètes pour déployer en ligne
+- **[Guide de Déploiement](./DEPLOYMENT.md)** - Instructions complètes pour déployer en ligne
+- **[Checklist de Déploiement](./DEPLOYMENT_CHECKLIST.md)** - Liste de vérification étape par étape
+- **[Architecture](./ARCHITECTURE.md)** - Diagrammes et explications de l'architecture
+- **[Guide de Dépannage](./TROUBLESHOOTING.md)** - Solutions aux problèmes courants
 - Frontend: Vue.js + Vuetify
 - Backend: Express.js + PostgreSQL
+
+## 🛠️ Technologies
+
+- **Frontend**: Vue.js 2, Vuetify, Vue Router, Vuex
+- **Backend**: Node.js, Express, Sequelize ORM
+- **Base de données**: PostgreSQL
+- **Authentification**: JWT + Passport (CAS support)
+- **Autres**: QRCode generation, PDF generation
+
+## 🌐 Plateformes de Déploiement
+
+- **Backend**: Render.com (Plan gratuit disponible)
+- **Frontend**: Vercel (Plan gratuit disponible)
+- **Base de données**: PostgreSQL sur Render (Plan gratuit disponible)
+
+## 📞 Support
+
+Pour toute question ou problème:
+1. Consultez le [Guide de Dépannage](./TROUBLESHOOTING.md)
+2. Vérifiez les issues existantes sur GitHub
+3. Ouvrez une nouvelle issue avec les détails du problème
