@@ -4,6 +4,7 @@ services:
     env: node
     plan: free
     region: frankfurt
+    rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -17,13 +18,13 @@ services:
         generateValue: true
 
       - key: CAS_SERVICE_URL
-        value: https://edt-backend.onrender.com/api/auth/login-cas
+        sync: false
 
       - key: CAS_URL
         value: https://auth.univ-fcomte.fr/
 
       - key: FRONTEND_URL
-        value: https://edt-alt.vercel.app
+        sync: false
 
       # Database connection - Render will provide DATABASE_URL automatically
       - key: DATABASE_URL

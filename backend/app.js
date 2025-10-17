@@ -11,8 +11,30 @@ dotenv.config();
 const app = express();
 
 // CORS
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = [
+  'http://localhost:8081',
+  'https://0b510d3490a5.ngrok-free.app',
+  'https://edt-alt.vercel.app',
+  'https://aurelie17112005.github.io'
+];
+
+// Add production frontend URL from environment variable if available
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 const corsOptions = {
-  origin: ['http://localhost:8081','https://0b510d3490a5.ngrok-free.app','edt-alt.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowed => origin.startsWith(allowed) || allowed.startsWith(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'cache-control'],
   credentials: true
@@ -38,8 +60,8 @@ app.use(session({
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
     httpOnly: true,
-    secure: false, // passe à true en production si HTTPS
-    sameSite: 'lax'
+    secure: isProduction, // Use secure cookies in production (HTTPS)
+    sameSite: isProduction ? 'none' : 'lax' // 'none' required for cross-site cookies with secure
   }
 }));
 app.use(passport.initialize());
